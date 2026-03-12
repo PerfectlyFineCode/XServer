@@ -1,0 +1,9 @@
+<Solution>
+  <Project Path="CrossServer.Benchmarks/CrossServer.Benchmarks.csproj" />
+  <Project Path="CrossServer.Net/CrossServer.Net.csproj" />
+  <Project Path="CrossServer.PacketGenerator/CrossServer.PacketGenerator.Sample/CrossServer.PacketGenerator.Sample.csproj" />
+  <Project Path="CrossServer.PacketGenerator/CrossServer.PacketGenerator.Tests/CrossServer.PacketGenerator.Tests.csproj" />
+  <Project Path="CrossServer.PacketGenerator/CrossServer.PacketGenerator/CrossServer.PacketGenerator.csproj" />
+  <Project Path="CrossServer.Shared/CrossServer.Shared.csproj" />
+  <Project Path="CrossServer.Tests/CrossServer.Tests.csproj" />
+</Solution>
