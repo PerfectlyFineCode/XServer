@@ -18,29 +18,9 @@ public static class PacketReaderUtility
 		{
 			return (0, null, 0, false);
 		}
-
-		byte lengthType = headerBuffer[1];
-		int lengthBytesCount = lengthType switch
-		{
-			0 => sizeof(byte),
-			1 => sizeof(short),
-			2 => sizeof(int),
-			_ => 0
-		};
-
-		if (lengthBytesCount == 0)
-		{
-			return (0, null, 0, false);
-		}
-
-		using IMemoryOwner<byte> lengthBufferOwner = MemoryPool<byte>.Shared.Rent(lengthBytesCount);
-		await socket.ReceiveAsync(lengthBufferOwner.Memory[..lengthBytesCount], SocketFlags.None, cancellationToken);
-
-		Span<byte> fullHeader = stackalloc byte[PacketHeader.Size + lengthBytesCount];
-		headerBuffer.CopyTo(fullHeader);
-		lengthBufferOwner.Memory.Span[..lengthBytesCount].CopyTo(fullHeader[PacketHeader.Size..]);
-
-		PacketReader headerReader = new(fullHeader);
+        
+        
+		PacketReader headerReader = new(headerBuffer);
 		PacketHeader? header = PacketHeader.Read(ref headerReader);
 		if (header == null)
 		{
@@ -52,7 +32,7 @@ public static class PacketReaderUtility
 			case < 0:
 				return (0, null, 0, false);
 			case 0:
-				return (header.Value.Id, null, 0, false);
+				return (header.Value.Id, null, 0, true);
 			case > MaxPacketSize:
 				return (0, null, 0, false);
 			default:

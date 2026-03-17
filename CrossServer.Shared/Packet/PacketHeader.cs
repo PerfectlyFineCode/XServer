@@ -1,60 +1,26 @@
-﻿using System;
-using System.Buffers;
-using System.Buffers.Binary;
-using System.Net.Sockets;
+﻿namespace CrossServer.Shared;
 
-namespace CrossServer.Shared;
-
-public struct PacketHeader
+public readonly struct PacketHeader(byte id, int payloadLength)
 {
-	public const int Size = sizeof(byte) + sizeof(byte);
+	public const int Size = sizeof(byte) + sizeof(int);
 	
-	public byte Id { get; set; }
-	public byte LengthType { get; set; }
-	
-	public int PayloadLength { get; set; }
-	
-	public PacketHeader(byte id, int payloadLength)
-	{
-		Id = id;
-		PayloadLength = payloadLength;
-		LengthType = payloadLength switch
-		{
-			< byte.MaxValue  => 0,
-			< short.MaxValue => 1,
-			_                => 2
-		};
-	}
+	public byte Id { get; } = id;
+    
+    public int PayloadLength { get; } = payloadLength;
 
-	public static PacketHeader? Read(ref PacketReader reader)
+    public static PacketHeader? Read(ref PacketReader reader)
 	{
 		byte id = reader.ReadByte();
-		byte lengthType = reader.ReadByte();
-		int length = lengthType switch
-		{
-			0 => reader.ReadByte(),
-			1 => reader.ReadShort(),
-			2 => reader.ReadInt(),
-			_ => 0
-		};
+        int length = reader.ReadInt();
 		
-		if (length <= 0)
-		{
-			return null;
-		}
-		
-		return new PacketHeader(id, length)
-		{
-			LengthType = lengthType
-		};
-	}
+		return length <= 0 
+            ? new PacketHeader(id, 0) 
+            : new PacketHeader(id, length);
+    }
 
 	public void Write(PacketWriter writer)
 	{
 		writer.Write(Id);
-		writer.Write(LengthType);
-		if (LengthType == 0) writer.Write((byte)PayloadLength);
-		else if (LengthType == 1) writer.Write((short)PayloadLength);
-		else writer.Write(PayloadLength);
-	}
+        writer.Write(PayloadLength);
+    }
 }

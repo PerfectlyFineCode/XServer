@@ -30,7 +30,7 @@ public partial class PacketRegistry
 		return this;
 	}
 	
-	public IPacket CreatePacket(byte packetId)
+	public IPacket? CreatePacket(byte packetId)
 	{
 		return _packetTypes.ContainsKey(packetId)
 			? _provider.CreatePacket(packetId)

@@ -55,6 +55,16 @@ public class ClientContext : IDisposable
 			_logger?.LogInfo($"[Warning] Send queue full for {Id}. Packet dropped.");
 		}
 	}
+    
+    public void Reply<T>() where T : IPacket, new()
+    {
+        byte[] data = new T().Build();
+        
+        if (!SendQueue.TryAdd(data))
+        {
+            _logger?.LogInfo($"[Warning] Send queue full for {Id}. Packet dropped.");
+        }
+    }
 	
 	public void ReplyRaw(byte[] data)
 	{

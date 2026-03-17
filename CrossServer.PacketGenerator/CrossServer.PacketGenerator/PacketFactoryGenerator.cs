@@ -60,7 +60,7 @@ public sealed class PacketFactoryGenerator : IIncrementalGenerator
     
         sb.AppendLine("public class GeneratedPacketProvider : IPacketProvider");
         sb.AppendLine("{");
-        sb.AppendLine("    public IPacket CreateInstance(byte id) => id switch");
+        sb.AppendLine("    public IPacket CreatePacket(byte id) => id switch");
         sb.AppendLine("    {");
 
         foreach (var packet in packets.OrderBy(p => p.Id))

@@ -1,7 +1,8 @@
-﻿namespace CrossServer.Shared;
+﻿using CrossServer.Shared.Interfaces;
 
-public interface IPacket
+namespace CrossServer.Shared;
+
+public interface IPacket : ISerializableData
 {
-	public void Serialize(PacketWriter writer);
-	public void Deserialize(ref PacketReader reader);
+    
 }

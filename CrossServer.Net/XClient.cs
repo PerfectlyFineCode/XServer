@@ -40,33 +40,39 @@ public sealed class XClient
 	/// </summary>
 	public async void StartListening()
 	{
-		try
-		{
-			while (_socket.Connected && !_cancellationTokenSource.Token.IsCancellationRequested)
-			{
-				(byte id, byte[]? payload, int payloadLength, bool success) =
-					await PacketReaderUtility.ReadIncomingPacket(_socket, _cancellationTokenSource.Token);
+        try
+        {
+            OnConnected();
+            while (_socket.Connected && !_cancellationTokenSource.Token.IsCancellationRequested)
+            {
+                (byte id, byte[]? payload, int payloadLength, bool success) =
+                    await PacketReaderUtility.ReadIncomingPacket(_socket, _cancellationTokenSource.Token);
 
-				if (!success || payload == null)
-				{
-					break;
-				}
+                if (!success)
+                {
+                    break;
+                }
 
-				try
-				{
-					IPacket packet = PacketParser.ParsePacket(_packetListener.PacketRegistry, id, payload, payloadLength);
-					_packetListener.OnPacketReceived(_context, packet);
-				}
-				finally
-				{
-					ArrayPool<byte>.Shared.Return(payload);
-				}
-			}
-		}
-		catch (Exception ex)
-		{
-			_logger?.LogInfo($"Client Receive Error: {ex.Message}");
-		}
+                try
+                {
+                    IPacket packet =
+                        PacketParser.ParsePacket(_packetListener.PacketRegistry, id, payload, payloadLength);
+                    _packetListener.OnPacketReceived(_context, packet);
+                }
+                finally
+                {
+                    ArrayPool<byte>.Shared.Return(payload);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger?.LogInfo($"Client Receive Error: {ex.Message}");
+        }
+        finally
+        {
+            OnDisconnected();
+        }
 	}
 
 	/// <summary>
@@ -76,39 +82,45 @@ public sealed class XClient
 	/// </summary>
 	public async void StartListeningManual()
 	{
-		try
-		{
-			while (true)
-			{
-				if (!_socket.Connected)
-				{
-					OnDisconnected();
-					await ReconnectAsync(_host, _port);
-				}
-				
-				(byte id, byte[]? payload, int payloadLength, bool success) =
-					await PacketReaderUtility.ReadIncomingPacket(_socket, _cancellationTokenSource.Token);
+        try
+        {
+            OnConnected();
+            while (true)
+            {
+                if (!_socket.Connected)
+                {
+                    OnDisconnected();
+                    await ReconnectAsync(_host, _port);
+                }
 
-				if (!success || payload == null)
-				{
-					break;
-				}
-				
-				try
-				{
-					IPacket packet = PacketParser.ParsePacket(_packetListener.PacketRegistry, id, payload, payloadLength);
-					_incomingPackets.Enqueue(packet);
-				}
-				finally
-				{
-					ArrayPool<byte>.Shared.Return(payload);
-				}
-			}
-		}
-		catch (Exception ex)
-		{
-			_logger?.LogInfo($"Client Receive Error: {ex.Message}");
-		}
+                (byte id, byte[]? payload, int payloadLength, bool success) =
+                    await PacketReaderUtility.ReadIncomingPacket(_socket, _cancellationTokenSource.Token);
+
+                if (!success || payload == null)
+                {
+                    break;
+                }
+
+                try
+                {
+                    IPacket packet =
+                        PacketParser.ParsePacket(_packetListener.PacketRegistry, id, payload, payloadLength);
+                    _incomingPackets.Enqueue(packet);
+                }
+                finally
+                {
+                    ArrayPool<byte>.Shared.Return(payload);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger?.LogInfo($"Client Receive Error: {ex.Message}");
+        }
+        finally
+        {
+            OnDisconnected();
+        }
 	}
 	
 	private bool _isReconnecting;
@@ -168,12 +180,11 @@ public sealed class XClient
 			_cancellationTokenSource = new CancellationTokenSource();
 			_context = new ClientContext(_id.Value, _socket);
 		
-			Task.Factory.StartNew(() => ProcessClientSenderLoop(_context), TaskCreationOptions.LongRunning);
+			Task.Factory.StartNew(() => ProcessClientSenderLoop(_context), _cancellationTokenSource.Token);
 			return true;
 		}
 		catch
 		{
-			
 			_cancellationTokenSource.Cancel();
 			return false;
 		}
@@ -183,7 +194,7 @@ public sealed class XClient
 	{
 		try
 		{
-			foreach (byte[] data in context.SendQueue.GetConsumingEnumerable())
+			foreach (byte[] data in context.SendQueue.GetConsumingEnumerable(_cancellationTokenSource.Token))
 			{
 				if (!context.Socket.Connected) break;
 				context.Socket.Send(data);
@@ -213,11 +224,13 @@ public sealed class XClient
 
 	private void OnConnected()
 	{
+        _packetListener.OnClientConnected(_context);
 		Connected?.Invoke();
 	}
 
 	private void OnDisconnected()
 	{
+        _packetListener.OnClientDisconnected(_context);
 		Disconnected?.Invoke();
 	}
 

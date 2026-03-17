@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Buffers.Binary;
 using System.Threading.Tasks;
+using CrossServer.Shared.Interfaces;
 
 namespace CrossServer.Shared;
 
@@ -48,33 +49,41 @@ public class PacketWriter : IDisposable, IAsyncDisposable
 	{
 		_stream.WriteByte(value);
 	}
-	
-	public void WriteVariableLength(int value)
-	{
-		if (value < byte.MaxValue)
-		{
-			Write((byte)value);
-		}
-		else if (value < short.MaxValue)
-		{
-			Write((short)value);
-		}
-		else
-		{
-			Write(value);
-		}
-	}
+    
+    public void Write(Guid value)
+    {
+        WriteBytes(value.ToByteArray());
+    }
+    
+    public void Write<T>(T value) where T : struct, ISerializableData
+    {
+        value.Serialize(this);
+    }
+    
+    public void WriteArray<T>(T[] array) where T : struct, ISerializableData
+    {
+        WriteFixedLength(array.Length);
+        foreach (T item in array)
+        {
+            Write(item);
+        }
+    }
+
+    public void WriteFixedLength(int value)
+    {
+        Write(value);
+    }
 
 	public void WriteString(string value)
 	{
 		Span<byte> bytes = System.Text.Encoding.UTF8.GetBytes(value);
-		Write(bytes.Length);
+		WriteFixedLength(bytes.Length);
 		_stream.Write(bytes);
 	}
 	
-	public void WriteBytesWithVarLength(byte[] payload)
+	public void WriteBytesWithFixedLength(byte[] payload)
 	{
-		WriteVariableLength(payload.Length);
+        WriteFixedLength(payload.Length);
 		_stream.Write(payload);
 	}
 	

@@ -102,7 +102,7 @@ public class XServer
 				#endif
 				(byte id, byte[]? payload, int length, bool success) = await PacketReaderUtility.ReadIncomingPacket(clientSocket);
             
-				if (!success || payload == null)
+				if (!success)
 				{
 					#if DEBUG
 					_logger?.LogInfo($"Failed to read packet from client {context.Id}. Disconnecting.");
@@ -120,9 +120,13 @@ public class XServer
 						break;
 					}
 				}
-				finally 
+				finally
 				{
-					ArrayPool<byte>.Shared.Return(payload);
+                    if (payload != null)
+                    {
+                        _logger?.LogInfo("Returning array to pool");
+					    ArrayPool<byte>.Shared.Return(payload);
+                    }
 				}
 			}
 		}
@@ -206,7 +210,7 @@ public class XServer
 		}, cancellationToken, TaskCreationOptions.LongRunning, TaskScheduler.Current);
 	}
 
-	private bool ProcessPacket(ClientContext context, byte id, byte[] payload, int payloadLength)
+	private bool ProcessPacket(ClientContext context, byte id, byte[]? payload, int payloadLength)
 	{
 		try
 		{
