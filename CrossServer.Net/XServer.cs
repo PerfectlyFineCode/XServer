@@ -214,7 +214,14 @@ public class XServer
 	{
 		try
 		{
-			IPacket packet = PacketParser.ParsePacket(_packetListener.PacketRegistry, id, payload, payloadLength);
+            IPacket? packet =
+                PacketParser.ParsePacket(_packetListener.PacketRegistry, id, payload, payloadLength);
+            if (packet == null)
+            {
+                _logger?.LogWarning($"Unhandled packet by ID: {id}");
+                return false;
+            }
+            
 			_packetListener.OnPacketReceived(context, packet);
 			
 			_logger?.LogInfo("Packet received from client.");

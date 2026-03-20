@@ -55,8 +55,13 @@ public sealed class XClient
 
                 try
                 {
-                    IPacket packet =
+                    IPacket? packet =
                         PacketParser.ParsePacket(_packetListener.PacketRegistry, id, payload, payloadLength);
+                    if (packet == null)
+                    {
+                        _logger?.LogWarning($"Unhandled packet by ID: {id}");
+                        continue;
+                    }
                     _packetListener.OnPacketReceived(_context, packet);
                 }
                 finally
@@ -85,7 +90,7 @@ public sealed class XClient
         try
         {
             OnConnected();
-            while (true)
+            while (_socket.Connected && !_cancellationTokenSource.Token.IsCancellationRequested)
             {
                 if (!_socket.Connected)
                 {
@@ -103,8 +108,14 @@ public sealed class XClient
 
                 try
                 {
-                    IPacket packet =
+                    IPacket? packet =
                         PacketParser.ParsePacket(_packetListener.PacketRegistry, id, payload, payloadLength);
+                    if (packet == null)
+                    {
+                        _logger?.LogWarning($"Unhandled packet by ID: {id}");
+                        continue;
+                    }
+                    
                     _incomingPackets.Enqueue(packet);
                 }
                 finally
