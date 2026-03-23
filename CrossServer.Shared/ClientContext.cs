@@ -6,14 +6,14 @@ using CrossServer.Shared.Interfaces;
 
 namespace CrossServer.Shared;
 
-public class ClientContext : IDisposable
+public class ClientContext(Guid id, Socket socket, IXLogger? logger = null) : IDisposable
 {
-	private readonly IXLogger? _logger;
+	private readonly IXLogger? _logger = logger ?? new ConsoleXLogger();
 	
-	public Guid Id { get; }
-	public Socket Socket { get; }
-	
-	public ClientContextDataBag DataBag { get; } = new();
+	public Guid Id { get; } = id;
+    public Socket Socket { get; } = socket;
+
+    public ClientContextDataBag DataBag { get; } = new();
 
 	public DateTime LastHeartbeat { get; set; } = DateTime.UtcNow;
 	
@@ -21,9 +21,9 @@ public class ClientContext : IDisposable
 	
 	public bool IsConnected => Socket.Connected && (DateTime.UtcNow - LastHeartbeat).TotalSeconds < 40;
 		
-	public BlockingCollection<byte[]> SendQueue { get; }
-	
-	public Action<byte[]>? OnBroadcastRequest { get; set; }
+	public BlockingCollection<byte[]> SendQueue { get; } = new(new ConcurrentQueue<byte[]>(), 1024);
+
+    public Action<byte[]>? OnBroadcastRequest { get; set; }
 	
 	public object? this[string key]
 	{
@@ -31,16 +31,7 @@ public class ClientContext : IDisposable
 		set => DataBag[key] = value;
 	}
 
-	public ClientContext(Guid id, Socket socket, IXLogger? logger = null)
-	{
-		Id = id;
-		Socket = socket;
-		_logger = logger ?? new ConsoleXLogger();
-
-		SendQueue = new BlockingCollection<byte[]>(new ConcurrentQueue<byte[]>(), 1024);
-	}
-	
-	public void UpdateLatency(long sentTicks)
+    public void UpdateLatency(long sentTicks)
 	{
 		LastHeartbeat = DateTime.UtcNow;
 		Latency = (DateTime.UtcNow.Ticks - sentTicks) / TimeSpan.TicksPerMillisecond;
