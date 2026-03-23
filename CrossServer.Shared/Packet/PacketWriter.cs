@@ -60,6 +60,11 @@ public class PacketWriter : IDisposable, IAsyncDisposable
         value.Serialize(this);
     }
     
+    public void WriteEnum<T>(T value) where T : Enum
+    {
+        Write((byte)(object)value);
+    }
+    
     public void WriteArray<T>(T[] array) where T : struct, ISerializableData
     {
         WriteFixedLength(array.Length);

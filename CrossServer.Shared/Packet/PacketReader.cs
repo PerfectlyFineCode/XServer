@@ -83,7 +83,7 @@ public ref struct PacketReader(ReadOnlySpan<byte> data)
 	
 	public T ReadEnum<T>() where T : Enum
 	{
-		return (T)(object)ReadInt();
+		return (T)(object)ReadByte();
 	}
     
     public T[] ReadStructArray<T>() where T : struct, ISerializableData
