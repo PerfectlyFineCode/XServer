@@ -17,13 +17,11 @@ public class PacketListener
 		
 		Dispatcher.RegisterHandler<PingPacket>((context, ping) => 
 		{
-			Console.WriteLine($"Received PingPacket with timestamp: {ping.Timestamp}");
 			context.Reply(new PongPacket { Timestamp = ping.Timestamp });
 		});
 
 		Dispatcher.RegisterHandler<PongPacket>((context, pong) => 
 		{
-			Console.WriteLine($"Received PongPacket with timestamp: {pong.Timestamp} from client {context.Id}");
 			context.UpdateLatency(pong.Timestamp);
 		});
 	}
@@ -50,12 +48,5 @@ public class PacketListener
 	public byte[] SerializePacket<T>(T packet) where T : IPacket
 	{
 		return packet.Build();
-	}
-	
-	private class ConsoleXLogger : IXLogger
-	{
-		public void LogInfo(string msg) => Console.WriteLine($"[INFO] {msg}");
-		public void LogWarning(string msg) => Console.WriteLine($"[WARN] {msg}");
-		public void LogError(string msg) => Console.WriteLine($"[ERROR] {msg}");
 	}
 }

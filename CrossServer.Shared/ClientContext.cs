@@ -43,7 +43,7 @@ public class ClientContext(Guid id, Socket socket, IXLogger? logger = null) : ID
         
 		if (!SendQueue.TryAdd(data))
 		{
-			_logger?.LogInfo($"[Warning] Send queue full for {Id}. Packet dropped.");
+			_logger?.LogTrace($"[Warning] Send queue full for {Id}. Packet dropped.");
 		}
 	}
     
@@ -53,7 +53,7 @@ public class ClientContext(Guid id, Socket socket, IXLogger? logger = null) : ID
         
         if (!SendQueue.TryAdd(data))
         {
-            _logger?.LogInfo($"[Warning] Send queue full for {Id}. Packet dropped.");
+            _logger?.LogTrace($"[Warning] Send queue full for {Id}. Packet dropped.");
         }
     }
 	
@@ -61,7 +61,7 @@ public class ClientContext(Guid id, Socket socket, IXLogger? logger = null) : ID
 	{
 		if (!SendQueue.TryAdd(data))
 		{
-			_logger?.LogInfo($"[Warning] Send queue full for {Id}. Packet dropped.");
+			_logger?.LogTrace($"[Warning] Send queue full for {Id}. Packet dropped.");
 		}
 	}
 	
@@ -90,7 +90,7 @@ public class ClientContext(Guid id, Socket socket, IXLogger? logger = null) : ID
 		{
 			Socket.Close();
 			SendQueue.CompleteAdding();
-			_logger?.LogInfo($"Client {Id} disconnected.");
+			_logger?.LogTrace($"Client {Id} disconnected.");
 		}
 	}
 
@@ -102,8 +102,9 @@ public class ClientContext(Guid id, Socket socket, IXLogger? logger = null) : ID
 	
 	private class ConsoleXLogger : IXLogger
 	{
+		public void LogTrace(string msg) => Console.WriteLine($"[TRACE] {msg}");
 		public void LogInfo(string msg) => Console.WriteLine($"[INFO] {msg}");
 		public void LogWarning(string msg) => Console.WriteLine($"[WARN] {msg}");
-		public void LogError(string msg) => Console.WriteLine($"[ERROR] {msg}");
+        public void LogError(string msg) => Console.WriteLine($"[ERROR] {msg}");
 	}
 }

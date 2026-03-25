@@ -29,7 +29,7 @@ public class XServer
 		_port = port;
 		_ipAddress = ipAddress;
 		_packetListener = packetListener;
-		_logger?.LogInfo("XServer initialized.");
+		_logger?.LogTrace("XServer initialized.");
 	}
 	
 	public async Task Start(CancellationToken cancellationToken)
@@ -37,7 +37,7 @@ public class XServer
 		_serverSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
 		_serverSocket.Bind(new System.Net.IPEndPoint(System.Net.IPAddress.Parse(_ipAddress), _port));
 		_serverSocket.Listen(100);
-		_logger?.LogInfo("XServer started.");
+		_logger?.LogTrace("XServer started.");
 		await AcceptClients(cancellationToken);
 	}
 	
@@ -49,7 +49,7 @@ public class XServer
 			try
 			{
 				Socket clientSocket = await _serverSocket.AcceptAsync();
-				_logger?.LogInfo($"Client connected: {clientSocket.RemoteEndPoint}");
+				_logger?.LogTrace($"Client connected: {clientSocket.RemoteEndPoint}");
 
 				await _connectionSemaphore.WaitAsync(cancellationToken);
 
@@ -67,14 +67,14 @@ public class XServer
 			}
 			catch (ObjectDisposedException)
 			{
-				_logger?.LogInfo("Server socket closed, stopping accept loop.");
+				_logger?.LogTrace("Server socket closed, stopping accept loop.");
 				break;
 			}
 			catch (Exception ex)
 			{
 				if (cancellationToken.IsCancellationRequested)
 				{
-					_logger?.LogInfo("Shutdown requested, stopping accept loop.");
+					_logger?.LogTrace("Shutdown requested, stopping accept loop.");
 					break;
 				}
 
@@ -98,14 +98,14 @@ public class XServer
 			while (context.IsConnected)
 			{
 				#if DEBUG
-				_logger?.LogInfo($"Data Available from client {context.Id} - Available: {clientSocket.Available} bytes");
+				_logger?.LogTrace($"Data Available from client {context.Id} - Available: {clientSocket.Available} bytes");
 				#endif
 				(byte id, byte[]? payload, int length, bool success) = await PacketReaderUtility.ReadIncomingPacket(clientSocket);
             
 				if (!success)
 				{
 					#if DEBUG
-					_logger?.LogInfo($"Failed to read packet from client {context.Id}. Disconnecting.");
+					_logger?.LogTrace($"Failed to read packet from client {context.Id}. Disconnecting.");
 					#endif
 					break;
 				}
@@ -115,7 +115,7 @@ public class XServer
 					if (!ProcessPacket(context, id, payload, length))
 					{
 						#if DEBUG
-						_logger?.LogInfo($"Failed to process packet from client {context.Id}. Disconnecting.");
+						_logger?.LogTrace($"Failed to process packet from client {context.Id}. Disconnecting.");
 						#endif
 						break;
 					}
@@ -124,7 +124,7 @@ public class XServer
 				{
                     if (payload != null)
                     {
-                        _logger?.LogInfo("Returning array to pool");
+                        _logger?.LogTrace("Returning array to pool");
 					    ArrayPool<byte>.Shared.Return(payload);
                     }
 				}
@@ -133,13 +133,13 @@ public class XServer
 		catch (Exception ex)
 		{
 			#if DEBUG
-			_logger?.LogInfo($"Error handling client: {ex.Message}");
+			_logger?.LogTrace($"Error handling client: {ex.Message}");
 			#endif
 		}
 		finally
 		{
 			#if DEBUG
-			_logger?.LogInfo($"Cleaning up client {context.Id}.");
+			_logger?.LogTrace($"Cleaning up client {context.Id}.");
 			#endif
 			context.SendQueue.CompleteAdding(); 
 			_clients.TryRemove(clientId, out _);
@@ -160,7 +160,7 @@ public class XServer
 				}
 				catch (SocketException ex)
 				{
-					_logger?.LogInfo($"Send error for client {context.Id}: {ex.Message}");
+					_logger?.LogTrace($"Send error for client {context.Id}: {ex.Message}");
 					break;
 				}
 			}
@@ -174,7 +174,7 @@ public class XServer
 			_packetListener.OnClientDisconnected(context);
 			DisconnectClient(context.Socket);
 			context.Dispose();
-			_logger?.LogInfo($"client {context.Id} resources cleaned up.");
+			_logger?.LogTrace($"client {context.Id} resources cleaned up.");
 		}
 	}
 	
@@ -191,12 +191,12 @@ public class XServer
 					{
 						if ((now - context.LastHeartbeat).TotalSeconds > 30)
 						{
-							_logger?.LogInfo($"Client {context.Id} timed out.");
+							_logger?.LogTrace($"Client {context.Id} timed out.");
 							DisconnectClient(context.Socket);
 							continue;
 						}
 
-						_logger?.LogInfo($"Sending heartbeat to client {context.Id}.");
+						_logger?.LogTrace($"Sending heartbeat to client {context.Id}.");
 						context.Reply(new PingPacket());
 					}
 					
@@ -224,12 +224,12 @@ public class XServer
             
 			_packetListener.OnPacketReceived(context, packet);
 			
-			_logger?.LogInfo("Packet received from client.");
+			_logger?.LogTrace("Packet received from client.");
 			return true;
 		}
 		catch (Exception ex)
 		{
-			_logger?.LogInfo($"Error processing packet: {ex.Message}");
+			_logger?.LogTrace($"Error processing packet: {ex.Message}");
 			return false;
 		}
 	}
@@ -238,7 +238,7 @@ public class XServer
 	{
 		if (!context.SendQueue.TryAdd(packetData))
 		{
-			_logger?.LogInfo($"[Warning] Send queue full for {context.Id}. Packet dropped.");
+			_logger?.LogTrace($"[Warning] Send queue full for {context.Id}. Packet dropped.");
 		}
 	}
 	
@@ -256,7 +256,7 @@ public class XServer
 		{
 			clientSocket.Shutdown(SocketShutdown.Both);
 			clientSocket.Close();
-			_logger?.LogInfo("Client disconnected.");
+			_logger?.LogTrace("Client disconnected.");
 		}
 		catch (ObjectDisposedException)
 		{
@@ -264,7 +264,7 @@ public class XServer
 		}
 		catch (Exception ex)
 		{
-			_logger?.LogInfo($"Error disconnecting client: {ex.Message}");
+			_logger?.LogTrace($"Error disconnecting client: {ex.Message}");
 		}
 	}
 
@@ -276,11 +276,12 @@ public class XServer
 			DisconnectClient(client.Socket);
 		}
     
-		_logger?.LogInfo("XServer stopped.");
+		_logger?.LogTrace("XServer stopped.");
 	}
 	
 	private class ConsoleXLogger : IXLogger
 	{
+		public void LogTrace(string msg) => Console.WriteLine($"[TRACE] {msg}");
 		public void LogInfo(string msg) => Console.WriteLine($"[INFO] {msg}");
 		public void LogWarning(string msg) => Console.WriteLine($"[WARN] {msg}");
 		public void LogError(string msg) => Console.WriteLine($"[ERROR] {msg}");

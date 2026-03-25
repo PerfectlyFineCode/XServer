@@ -96,6 +96,11 @@ public class PacketWriter : IDisposable, IAsyncDisposable
 	{
 		_stream.Write(payload);
 	}
+    
+    public void WriteBytes(ReadOnlySpan<byte> payload)
+    {
+        _stream.Write(payload);
+    }
 	
 	public byte[] ToArray() => _stream.ToArray();
 

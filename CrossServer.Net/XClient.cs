@@ -72,7 +72,7 @@ public sealed class XClient
         }
         catch (Exception ex)
         {
-            _logger?.LogInfo($"Client Receive Error: {ex.Message}");
+            _logger?.LogTrace($"Client Receive Error: {ex.Message}");
         }
         finally
         {
@@ -126,7 +126,7 @@ public sealed class XClient
         }
         catch (Exception ex)
         {
-            _logger?.LogInfo($"Client Receive Error: {ex.Message}");
+            _logger?.LogTrace($"Client Receive Error: {ex.Message}");
         }
         finally
         {
@@ -148,11 +148,11 @@ public sealed class XClient
 			try
 			{
 				retryCount++;
-				_logger?.LogInfo($"Attempting to reconnect ({retryCount})...");
+				_logger?.LogTrace($"Attempting to reconnect ({retryCount})...");
             
 				if (Connect(host, port))
 				{
-					_logger?.LogInfo("Reconnected successfully.");
+					_logger?.LogTrace("Reconnected successfully.");
 					_isReconnecting = false;
 					OnConnected();
                 
@@ -162,7 +162,7 @@ public sealed class XClient
 			}
 			catch (Exception ex)
 			{
-				_logger?.LogInfo($"Reconnect attempt failed: {ex.Message}");
+				_logger?.LogTrace($"Reconnect attempt failed: {ex.Message}");
 			}
 
 			await Task.Delay(5000);
@@ -185,10 +185,10 @@ public sealed class XClient
 			_host = host;
 			_port = port;
 			_id	??= Guid.NewGuid();
+			_cancellationTokenSource = new CancellationTokenSource();
 			_socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
 			_socket.Connect(host, port);
 		
-			_cancellationTokenSource = new CancellationTokenSource();
 			_context = new ClientContext(_id.Value, _socket);
 		
 			Task.Factory.StartNew(() => ProcessClientSenderLoop(_context), _cancellationTokenSource.Token);
@@ -213,7 +213,7 @@ public sealed class XClient
 		}
 		catch (Exception ex)
 		{
-			_logger?.LogInfo($"Client Send Error: {ex.Message}");
+			_logger?.LogTrace($"Client Send Error: {ex.Message}");
 		}
 	}
 
@@ -252,6 +252,7 @@ public sealed class XClient
 	
 	private class ConsoleXLogger : IXLogger
 	{
+		public void LogTrace(string msg) => Console.WriteLine($"[TRACE] {msg}");
 		public void LogInfo(string msg) => Console.WriteLine($"[INFO] {msg}");
 		public void LogWarning(string msg) => Console.WriteLine($"[WARN] {msg}");
 		public void LogError(string msg) => Console.WriteLine($"[ERROR] {msg}");
