@@ -15,13 +15,13 @@ public class ClientContext(Guid id, Socket socket, IXLogger? logger = null) : ID
 
     public ClientContextDataBag DataBag { get; } = new();
 
-	public DateTime LastHeartbeat { get; set; } = DateTime.UtcNow;
+	public DateTime LastHeartbeat { get; private set; } = DateTime.UtcNow;
 	
 	public long Latency { get; private set; }
 	
 	public bool IsConnected => Socket.Connected && (DateTime.UtcNow - LastHeartbeat).TotalSeconds < 40;
 		
-	public BlockingCollection<byte[]> SendQueue { get; } = new(new ConcurrentQueue<byte[]>(), 1024);
+	public BlockingCollection<byte[]>? SendQueue { get; private set; } = new(new ConcurrentQueue<byte[]>(), 1024);
 
     public Action<byte[]>? OnBroadcastRequest { get; set; }
 	
@@ -38,10 +38,10 @@ public class ClientContext(Guid id, Socket socket, IXLogger? logger = null) : ID
 	}
 	
 	public void Reply<T>(T packet) where T : IPacket
-	{
-		byte[] data = packet.Build();
+    {
+        byte[] data = packet.Build();
         
-		if (!SendQueue.TryAdd(data))
+		if (SendQueue?.TryAdd(data) is not true)
 		{
 			_logger?.LogTrace($"[Warning] Send queue full for {Id}. Packet dropped.");
 		}
@@ -51,7 +51,7 @@ public class ClientContext(Guid id, Socket socket, IXLogger? logger = null) : ID
     {
         byte[] data = new T().Build();
         
-        if (!SendQueue.TryAdd(data))
+        if (SendQueue?.TryAdd(data) is not true)
         {
             _logger?.LogTrace($"[Warning] Send queue full for {Id}. Packet dropped.");
         }
@@ -59,7 +59,7 @@ public class ClientContext(Guid id, Socket socket, IXLogger? logger = null) : ID
 	
 	public void ReplyRaw(byte[] data)
 	{
-		if (!SendQueue.TryAdd(data))
+		if (SendQueue?.TryAdd(data) is not true)
 		{
 			_logger?.LogTrace($"[Warning] Send queue full for {Id}. Packet dropped.");
 		}
@@ -89,7 +89,7 @@ public class ClientContext(Guid id, Socket socket, IXLogger? logger = null) : ID
 		finally
 		{
 			Socket.Close();
-			SendQueue.CompleteAdding();
+			SendQueue?.CompleteAdding();
 			_logger?.LogTrace($"Client {Id} disconnected.");
 		}
 	}
@@ -97,8 +97,9 @@ public class ClientContext(Guid id, Socket socket, IXLogger? logger = null) : ID
 	/// <inheritdoc />
 	public void Dispose()
 	{
-		SendQueue.Dispose();
-	}
+		SendQueue?.Dispose();
+        SendQueue = null;
+    }
 	
 	private class ConsoleXLogger : IXLogger
 	{

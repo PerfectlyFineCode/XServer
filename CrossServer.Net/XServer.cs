@@ -141,7 +141,7 @@ public class XServer
 			#if DEBUG
 			_logger?.LogTrace($"Cleaning up client {context.Id}.");
 			#endif
-			context.SendQueue.CompleteAdding(); 
+			context.SendQueue?.CompleteAdding(); 
 			_clients.TryRemove(clientId, out _);
 		}
 	}
@@ -150,7 +150,7 @@ public class XServer
 	{
 		try
 		{
-			foreach (byte[] packetData in context.SendQueue.GetConsumingEnumerable())
+			foreach (byte[] packetData in context.SendQueue?.GetConsumingEnumerable()!)
 			{
 				if (!context.IsConnected) break;
 
@@ -236,7 +236,7 @@ public class XServer
 	
 	private void SendPacket(ClientContext context, byte[] packetData)
 	{
-		if (!context.SendQueue.TryAdd(packetData))
+		if (context.SendQueue?.TryAdd(packetData) is not true)
 		{
 			_logger?.LogTrace($"[Warning] Send queue full for {context.Id}. Packet dropped.");
 		}

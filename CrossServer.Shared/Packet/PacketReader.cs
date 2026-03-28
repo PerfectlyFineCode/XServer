@@ -48,28 +48,28 @@ public ref struct PacketReader(ReadOnlySpan<byte> data)
 
 	public int ReadInt()
 	{
-		int value = BinaryPrimitives.ReadInt32BigEndian(_data.Slice(Position, sizeof(int)));
+		int value = BinaryPrimitives.ReadInt32LittleEndian(_data.Slice(Position, sizeof(int)));
 		Position += sizeof(int);
 		return value;
 	}
 	
 	public long ReadInt64()
 	{
-		long value = BinaryPrimitives.ReadInt64BigEndian(_data.Slice(Position, sizeof(long)));
+		long value = BinaryPrimitives.ReadInt64LittleEndian(_data.Slice(Position, sizeof(long)));
 		Position += sizeof(long);
 		return value;
 	}
 	
 	public uint ReadUInt()
 	{
-		uint value = BinaryPrimitives.ReadUInt32BigEndian(_data.Slice(Position, sizeof(uint)));
+		uint value = BinaryPrimitives.ReadUInt32LittleEndian(_data.Slice(Position, sizeof(uint)));
 		Position += sizeof(uint);
 		return value;
 	}
 	
 	public short ReadShort()
 	{
-		short value = BinaryPrimitives.ReadInt16BigEndian(_data.Slice(Position, sizeof(short)));
+		short value = BinaryPrimitives.ReadInt16LittleEndian(_data.Slice(Position, sizeof(short)));
 		Position += sizeof(short);
 		return value;
 	}

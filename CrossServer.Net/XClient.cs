@@ -205,7 +205,7 @@ public sealed class XClient
 	{
 		try
 		{
-			foreach (byte[] data in context.SendQueue.GetConsumingEnumerable(_cancellationTokenSource.Token))
+			foreach (byte[] data in context.SendQueue?.GetConsumingEnumerable(_cancellationTokenSource.Token)!)
 			{
 				if (!context.Socket.Connected) break;
 				context.Socket.Send(data);
