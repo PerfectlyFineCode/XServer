@@ -72,7 +72,7 @@ public sealed class XClient
         }
         catch (Exception ex)
         {
-            _logger?.LogTrace($"Client Receive Error: {ex.Message}");
+            _logger?.LogTrace($"Client Receive Error: {ex}");
         }
         finally
         {

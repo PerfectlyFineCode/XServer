@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Buffers.Binary;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using CrossServer.Shared.Interfaces;
 
@@ -68,6 +69,16 @@ public class PacketWriter : IDisposable, IAsyncDisposable
     public void WriteArray<T>(T[] array) where T : struct, ISerializableData
     {
         WriteFixedLength(array.Length);
+        foreach (T item in array)
+        {
+            Write(item);
+        }
+    }
+    
+    public void WriteArray<T>(ICollection<T> array) 
+        where T : struct, ISerializableData
+    {
+        WriteFixedLength(array.Count);
         foreach (T item in array)
         {
             Write(item);

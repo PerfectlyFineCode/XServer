@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Buffers.Binary;
+using System.Collections.Generic;
 using System.Text;
 using CrossServer.Shared.Interfaces;
 
@@ -97,6 +98,21 @@ public ref struct PacketReader(ReadOnlySpan<byte> data)
         {
             array[i] = ReadStruct<T>();
         }
+        return array;
+    }
+
+    public List<T> ReadStructList<T>() where T : struct, ISerializableData
+    {
+        int length = ReadFixedLength();
+        if (length < 0) throw new InvalidOperationException("Invalid array length.");
+        if (length == 0) return [];
+        
+        var array = new List<T>();
+        for (int i = 0; i < length; i++)
+        {
+            array.Add(ReadStruct<T>());
+        }
+        
         return array;
     }
     

@@ -229,7 +229,7 @@ public class XServer
 		}
 		catch (Exception ex)
 		{
-			_logger?.LogTrace($"Error processing packet: {ex.Message}");
+			_logger?.LogTrace($"Error processing packet: {ex}");
 			return false;
 		}
 	}
@@ -264,7 +264,7 @@ public class XServer
 		}
 		catch (Exception ex)
 		{
-			_logger?.LogTrace($"Error disconnecting client: {ex.Message}");
+			_logger?.LogTrace($"Error disconnecting client: {ex}");
 		}
 	}
 
