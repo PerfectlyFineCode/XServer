@@ -221,6 +221,12 @@ public class XServer
                 _logger?.LogWarning($"Unhandled packet by ID: {id}");
                 return false;
             }
+
+            if (context.Accepted is null)
+            {
+                _packetListener.OnClientRequest(context, packet, new ConnectionRequest(context, _packetListener));
+                return true;
+            }
             
 			_packetListener.OnPacketReceived(context, packet);
 			

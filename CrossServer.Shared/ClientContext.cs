@@ -13,6 +13,8 @@ public class ClientContext(Guid id, Socket socket, IXLogger? logger = null) : ID
 	public Guid Id { get; } = id;
     public Socket Socket { get; } = socket;
 
+    public bool? Accepted { get; private set; }
+
     public ClientContextDataBag DataBag { get; } = new();
 
 	public DateTime LastHeartbeat { get; private set; } = DateTime.UtcNow;
@@ -75,6 +77,16 @@ public class ClientContext(Guid id, Socket socket, IXLogger? logger = null) : ID
 	{
 		return (T?)DataBag[key];
 	}
+
+    internal void Accept()
+    {
+        Accepted = true;
+    }
+
+    internal void Reject()
+    {
+        Accepted = false;
+    }
 	
 	public void Close()
 	{

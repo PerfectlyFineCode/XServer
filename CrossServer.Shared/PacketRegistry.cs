@@ -18,11 +18,11 @@ public partial class PacketRegistry
 	}
 	
 	
-	public PacketRegistry RegisterPacket<T>() where T : IPacket
+	public PacketRegistry TryRegisterPacket<T>() where T : IPacket
 	{
 		byte packetId = GetPacketId<T>();
-		if (_packetTypes.ContainsKey(packetId))
-			throw new InvalidOperationException($"Packet type {typeof(T).Name} is already registered.");
+        if (_packetTypes.ContainsKey(packetId))
+            return this;
 
 		_packetTypes[packetId] = typeof(T);
 		_packetIds[typeof(T)] = packetId;
