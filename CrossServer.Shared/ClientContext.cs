@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.Diagnostics.CodeAnalysis;
 using System.Net.Sockets;
 using CrossServer.Shared.Extensions;
 using CrossServer.Shared.Interfaces;
@@ -77,6 +78,11 @@ public class ClientContext(Guid id, Socket socket, IXLogger? logger = null) : ID
 	{
 		return (T?)DataBag[key];
 	}
+    
+    public bool TryGetData<T>(string key, [NotNullWhen(true)] out T? value)
+    {
+        return DataBag.TryGetValue(key, out value);
+    }
 
     internal void Accept()
     {

@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 
 namespace CrossServer.Shared;
 
@@ -32,5 +33,17 @@ public class ClientContextDataBag
     public void Unset(string key)
     {
         Metadata.Remove(key);
+    }
+
+    public bool TryGetValue<T>(string key, [NotNullWhen(true)] out T? value)
+    {
+        if (Metadata.TryGetValue(key, out object? obj) && obj is T t)
+        {
+            value = t;
+            return true;
+        }
+        
+        value = default;
+        return false;
     }
 }
