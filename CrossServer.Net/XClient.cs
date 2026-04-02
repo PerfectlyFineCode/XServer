@@ -18,7 +18,7 @@ public sealed class XClient
 	public event Action Reconnecting;
 	
 	private readonly IXLogger? _logger;
-	private readonly PacketListener _packetListener;
+	private PacketListener _packetListener;
 	private readonly ConcurrentQueue<IPacket> _incomingPackets = new();
 	
 	private Socket _socket = null!;
@@ -227,6 +227,11 @@ public sealed class XClient
 			_socket.Close();
 		}
 	}
+    
+    public void UsePacketListener<T>(T packetListener) where T : PacketListener
+    {
+        _packetListener = packetListener;
+    }
 	
 	public void Send<T>(T packet) where T : IPacket
 	{
