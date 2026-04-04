@@ -13,9 +13,9 @@ namespace CrossServer.Net;
 
 public sealed class XClient
 {
-	public event Action Connected;
-	public event Action Disconnected;
-	public event Action Reconnecting;
+	public event Action? Connected;
+	public event Action? Disconnected;
+	public event Action? Reconnecting;
 	
 	private readonly IXLogger? _logger;
 	private PacketListener _packetListener;
@@ -26,7 +26,7 @@ public sealed class XClient
 	private string _host = null!;
 	private int _port;
 	private ClientContext _context = null!;
-	private CancellationTokenSource _cancellationTokenSource = null!;
+	private CancellationTokenSource? _cancellationTokenSource;
 	
 	public XClient(PacketListener packetListener, IXLogger? logger = null)
 	{
@@ -43,7 +43,7 @@ public sealed class XClient
         try
         {
             OnConnected();
-            while (_socket.Connected && !_cancellationTokenSource.Token.IsCancellationRequested)
+            while (_socket.Connected && !_cancellationTokenSource!.Token.IsCancellationRequested)
             {
                 (byte id, byte[]? payload, int payloadLength, bool success) =
                     await PacketReaderUtility.ReadIncomingPacket(_socket, _cancellationTokenSource.Token);
@@ -90,7 +90,7 @@ public sealed class XClient
         try
         {
             OnConnected();
-            while (_socket.Connected && !_cancellationTokenSource.Token.IsCancellationRequested)
+            while (_socket.Connected && !_cancellationTokenSource!.Token.IsCancellationRequested)
             {
                 if (!_socket.Connected)
                 {
@@ -196,7 +196,7 @@ public sealed class XClient
 		}
 		catch
 		{
-			_cancellationTokenSource.Cancel();
+			_cancellationTokenSource?.Cancel();
 			return false;
 		}
 	}
@@ -205,7 +205,7 @@ public sealed class XClient
 	{
 		try
 		{
-			foreach (byte[] data in context.SendQueue?.GetConsumingEnumerable(_cancellationTokenSource.Token)!)
+			foreach (byte[] data in context.SendQueue?.GetConsumingEnumerable(_cancellationTokenSource!.Token)!)
 			{
 				if (!context.Socket.Connected) break;
 				context.Socket.Send(data);
@@ -220,8 +220,8 @@ public sealed class XClient
 	
 	public void Disconnect()
 	{
-		_cancellationTokenSource.Cancel();
-		if (_socket.Connected)
+		_cancellationTokenSource?.Cancel();
+		if (_socket is { Connected: true })
 		{
 			_socket.Shutdown(SocketShutdown.Both);
 			_socket.Close();
@@ -233,10 +233,15 @@ public sealed class XClient
         _packetListener = packetListener;
     }
 	
-	public void Send<T>(T packet) where T : IPacket
+	public void Send<T>(T packet) where T : struct, IPacket
 	{
 		_context.Reply(packet); 
 	}
+    
+    public void Send<T>() where T : struct, IPacket
+    {
+        _context.Reply<T>(); 
+    }
 
 	private void OnConnected()
 	{
