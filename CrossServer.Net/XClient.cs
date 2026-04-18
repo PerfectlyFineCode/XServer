@@ -2,6 +2,7 @@
 using System.Buffers;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
@@ -187,10 +188,12 @@ public sealed class XClient
 			_id	??= Guid.NewGuid();
 			_cancellationTokenSource = new CancellationTokenSource();
 			_socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
-			_socket.Connect(host, port);
-		
+            IPAddress resolvedHost = ResolveHost(host);
+            
+			_socket.Connect(resolvedHost, port);
+            
 			_context = new ClientContext(_id.Value, _socket);
-		
+            
 			Task.Factory.StartNew(() => ProcessClientSenderLoop(_context), _cancellationTokenSource.Token);
 			return true;
 		}
@@ -259,6 +262,15 @@ public sealed class XClient
 	{
 		Reconnecting?.Invoke();
 	}
+    
+    private IPAddress ResolveHost(string host)
+    {
+        IPAddress[] addresses = Dns.GetHostAddresses(host);
+        
+        return addresses.Length == 0 
+            ? throw new Exception($"Unable to resolve host: {host}") 
+            : addresses[0];
+    }
 	
 	private class ConsoleXLogger : IXLogger
 	{
