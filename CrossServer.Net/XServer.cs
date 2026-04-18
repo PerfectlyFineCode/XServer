@@ -37,7 +37,7 @@ public class XServer
 		_serverSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
 		_serverSocket.Bind(new System.Net.IPEndPoint(System.Net.IPAddress.Parse(_ipAddress), _port));
 		_serverSocket.Listen(100);
-		_logger?.LogTrace("XServer started.");
+		_logger?.LogInfo($"XServerNow Listening on: {_serverSocket.LocalEndPoint}");
 		await AcceptClients(cancellationToken);
 	}
 	
