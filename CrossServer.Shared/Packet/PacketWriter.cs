@@ -51,6 +51,18 @@ public class PacketWriter : IDisposable, IAsyncDisposable
 		_stream.WriteByte(value);
 	}
     
+    
+    /// <summary>
+    /// Unable to use BinaryPrimitives for float
+    /// <see href="https://github.com/dotnet/runtime/issues/101085">Github Issue</see><br/>
+    /// Must use BitConverter
+    /// </summary>
+    /// <param name="value"></param>
+    public void Write(float value)
+    {
+        Write((int)value);
+    }
+    
     public void Write(Guid value)
     {
         WriteBytes(value.ToByteArray());

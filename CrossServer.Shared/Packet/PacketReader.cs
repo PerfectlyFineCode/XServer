@@ -74,6 +74,13 @@ public ref struct PacketReader(ReadOnlySpan<byte> data)
 		Position += sizeof(short);
 		return value;
 	}
+    
+    public float ReadFloat()
+    {
+        float value = BitConverter.ToSingle(_data.Slice(Position, sizeof(float)));
+        Position += sizeof(float);
+        return value;
+    }
 
     public Guid ReadGuid()
     {
