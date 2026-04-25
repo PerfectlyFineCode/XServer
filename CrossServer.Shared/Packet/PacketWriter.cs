@@ -16,7 +16,7 @@ public class PacketWriter : IDisposable, IAsyncDisposable
 	public void Write(int value)
 	{
 		Span<byte> buffer = stackalloc byte[sizeof(int)];
-		BinaryPrimitives.WriteInt32LittleEndian(buffer, value);
+		BinaryPrimitives.WriteInt32BigEndian(buffer, value);
 		_stream.Write(buffer);
 	}
 	
@@ -28,21 +28,21 @@ public class PacketWriter : IDisposable, IAsyncDisposable
 	public void Write(long value)
 	{
 		Span<byte> buffer = stackalloc byte[sizeof(long)];
-		BinaryPrimitives.WriteInt64LittleEndian(buffer, value);
+		BinaryPrimitives.WriteInt64BigEndian(buffer, value);
 		_stream.Write(buffer);
 	}
 	
 	public void Write(uint value)
 	{
 		Span<byte> buffer = stackalloc byte[sizeof(uint)];
-		BinaryPrimitives.TryWriteUInt32LittleEndian(buffer, value);
+		BinaryPrimitives.TryWriteUInt32BigEndian(buffer, value);
 		_stream.Write(buffer);
 	}
 	
 	public void Write(short value)
 	{
 		Span<byte> buffer = stackalloc byte[sizeof(short)];
-		BinaryPrimitives.WriteInt16LittleEndian(buffer, value);
+		BinaryPrimitives.WriteInt16BigEndian(buffer, value);
 		_stream.Write(buffer);
 	}
 	
