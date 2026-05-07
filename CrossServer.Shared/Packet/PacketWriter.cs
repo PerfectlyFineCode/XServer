@@ -86,6 +86,15 @@ public class PacketWriter : IDisposable, IAsyncDisposable
             Write(item);
         }
     }
+
+    public void WriteArray(int[] array)
+    {
+        WriteFixedLength(array.Length);
+        foreach (int item in array)
+        {
+            Write(item);
+        }
+    }
     
     public void WriteArray<T>(ICollection<T> array) 
         where T : struct, ISerializableData

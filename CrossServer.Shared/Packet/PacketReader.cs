@@ -94,6 +94,20 @@ public ref struct PacketReader(ReadOnlySpan<byte> data)
 		return (T)(object)ReadByte();
 	}
     
+    public int[] ReadIntArray()
+    {
+        int length = ReadFixedLength();
+        if (length < 0) throw new InvalidOperationException("Invalid array length.");
+        if (length == 0) return [];
+        
+        int[] array = new int[length];
+        for (int i = 0; i < length; i++)
+        {
+            array[i] = ReadInt();
+        }
+        return array;
+    }
+    
     public T[] ReadStructArray<T>() where T : struct, ISerializableData
     {
         int length = ReadFixedLength();

@@ -1,13 +1,11 @@
 ﻿using System;
 using System.Buffers;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using CrossServer.Shared;
-using CrossServer.Shared.Extensions;
 using CrossServer.Shared.Interfaces;
 
 namespace CrossServer.Net;
@@ -188,6 +186,8 @@ public sealed class XClient
 			_id	??= Guid.NewGuid();
 			_cancellationTokenSource = new CancellationTokenSource();
 			_socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+            _socket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.NoDelay, false);
+            
             IPAddress resolvedHost = ResolveHost(host);
             
 			_socket.Connect(resolvedHost, port);
@@ -263,7 +263,7 @@ public sealed class XClient
 		Reconnecting?.Invoke();
 	}
     
-    private IPAddress ResolveHost(string host)
+    private static IPAddress ResolveHost(string host)
     {
         IPAddress[] addresses = Dns.GetHostAddresses(host);
         

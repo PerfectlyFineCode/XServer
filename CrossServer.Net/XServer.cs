@@ -5,6 +5,7 @@ using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using CrossServer.Shared;
+using CrossServer.Shared.Extensions;
 using CrossServer.Shared.Heartbeat;
 using CrossServer.Shared.Interfaces;
 
@@ -35,6 +36,7 @@ public class XServer
 	public async Task Start(CancellationToken cancellationToken)
 	{ 
 		_serverSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+        _serverSocket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.NoDelay, false);
 		_serverSocket.Bind(new System.Net.IPEndPoint(System.Net.IPAddress.Parse(_ipAddress), _port));
 		_serverSocket.Listen(100);
 		_logger?.LogInfo($"XServerNow Listening on: {_serverSocket.LocalEndPoint}");
@@ -89,7 +91,7 @@ public class XServer
 		ClientContext context = new(clientId, clientSocket, _logger);
 		_clients[clientId] = context;
 		
-		context.OnBroadcastRequest += BroadcastPacket;
+		context.OnBroadcastRequest += BroadcastPacketRaw;
 		
 		_ = Task.Factory.StartNew(() => StartSenderLoop(context), TaskCreationOptions.LongRunning);
 		_packetListener.OnClientConnected(context);
@@ -248,13 +250,19 @@ public class XServer
 		}
 	}
 	
-	public void BroadcastPacket(byte[] packetData)
+	public void BroadcastPacketRaw(byte[] packetData)
 	{
 		foreach (ClientContext? client in _clients.Values)
 		{
 			SendPacket(client, packetData);
 		}
 	}
+    
+    public void BroadcastPacket<T>(T packet) where T : IPacket
+    {
+        byte[] packetData = packet.Build();
+        BroadcastPacketRaw(packetData);
+    }
 	
 	public void DisconnectClient(Socket clientSocket)
 	{
