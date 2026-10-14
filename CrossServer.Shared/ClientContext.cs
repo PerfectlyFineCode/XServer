@@ -7,12 +7,28 @@ using CrossServer.Shared.Interfaces;
 
 namespace CrossServer.Shared;
 
-public class ClientContext(Guid id, Socket socket, IXLogger? logger = null) : IDisposable
+public class ClientContext : IDisposable
 {
-	private readonly IXLogger? _logger = logger ?? new ConsoleXLogger();
-	
-	public Guid Id { get; } = id;
-    public Socket Socket { get; } = socket;
+	private readonly IXLogger? _logger;
+    
+    public ClientContext(Guid id, Socket socket, IXLogger? logger = null)
+    {
+        _logger = logger ?? new ConsoleXLogger();
+        Id = id;
+        Socket = socket;
+    }
+    
+    public ClientContext(Guid id, IXLogger? logger = null)
+    {
+        _logger = logger ?? new ConsoleXLogger();
+        Socket = null;
+        Id = id;
+    }
+
+    public Guid Id { get; }
+    public Socket? Socket { get; }
+    
+    public bool IsHuman => Socket != null;
 
     public bool? Accepted { get; private set; }
 
@@ -22,7 +38,7 @@ public class ClientContext(Guid id, Socket socket, IXLogger? logger = null) : ID
 	
 	public long Latency { get; private set; }
 	
-	public bool IsConnected => Socket.Connected && (DateTime.UtcNow - LastHeartbeat).TotalSeconds < 40;
+	public bool IsConnected => (Socket?.Connected ?? true) && (DateTime.UtcNow - LastHeartbeat).TotalSeconds < 40;
 		
 	public BlockingCollection<byte[]>? SendQueue { get; private set; } = new(new ConcurrentQueue<byte[]>(), 1024);
 
@@ -40,8 +56,10 @@ public class ClientContext(Guid id, Socket socket, IXLogger? logger = null) : ID
 		Latency = (DateTime.UtcNow.Ticks - sentTicks) / TimeSpan.TicksPerMillisecond;
 	}
 	
-	public void Reply<T>(T packet) where T : IPacket
+	public virtual void Reply<T>(T packet) where T : IPacket
     {
+        if (Socket == null) return;
+        
         byte[] data = packet.Build();
         
 		if (SendQueue?.TryAdd(data) is not true)
@@ -50,8 +68,11 @@ public class ClientContext(Guid id, Socket socket, IXLogger? logger = null) : ID
 		}
 	}
     
-    public void Reply<T>() where T : IPacket, new()
+    public virtual void Reply<T>() where T : IPacket, new()
     {
+        if (Socket == null) return;
+        
+        
         byte[] data = new T().Build();
         
         if (SendQueue?.TryAdd(data) is not true)
@@ -84,18 +105,20 @@ public class ClientContext(Guid id, Socket socket, IXLogger? logger = null) : ID
         return DataBag.TryGetValue(key, out value);
     }
 
-    internal void Accept()
+    public void Accept()
     {
         Accepted = true;
     }
 
-    internal void Reject()
+    public void Reject()
     {
         Accepted = false;
     }
 	
 	public void Close()
-	{
+    {
+        if (Socket == null) return;
+        
 		try
 		{
 			Socket.Shutdown(SocketShutdown.Both);
