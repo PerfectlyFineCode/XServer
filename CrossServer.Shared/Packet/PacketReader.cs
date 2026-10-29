@@ -24,15 +24,14 @@ public ref struct PacketReader(ReadOnlySpan<byte> data)
     
 	public ReadOnlySpan<byte> ReadBytesFixedLength()
 	{
-		int length = ReadFixedLength();
-		if (length < 0) throw new InvalidOperationException("Invalid byte array length.");
+		ulong length = ReadVarLength();
 		
-		if (Position + length > _data.Length)
+		if ((uint)Position + length > (ulong)_data.Length)
 		{
 			throw new InvalidOperationException("Not enough data to read the byte array.");
 		}
 		
-		return _data.Slice(Position, length);
+		return _data.Slice(Position, (int)length);
 	}
 	
 	public bool ReadBool()
@@ -45,6 +44,33 @@ public ref struct PacketReader(ReadOnlySpan<byte> data)
     public int ReadFixedLength()
     {
         return ReadInt();
+    }
+
+    /// <summary>
+    /// Based on <see href="https://en.wikipedia.org/wiki/LEB128">LEB128</see> encoding.
+    /// </summary>
+    public ulong ReadVarLength()
+    {
+	    ulong result = 0;
+		int shift = 0;
+
+		while (true)
+		{
+			if (Position >= _data.Length)
+				throw new InvalidOperationException("End of stream reached while reading varint.");
+			
+			byte b = ReadByte();
+			result |= (ulong)(b & 0x7F) << shift;
+
+			if ((b & 0x80) == 0)
+				break;
+
+			shift += 7;
+			if (shift > 63)
+				throw new InvalidOperationException("Varint is too long.");
+		}
+
+		return result;
     }
 
 	public int ReadInt()
@@ -96,12 +122,11 @@ public ref struct PacketReader(ReadOnlySpan<byte> data)
     
     public int[] ReadIntArray()
     {
-        int length = ReadFixedLength();
-        if (length < 0) throw new InvalidOperationException("Invalid array length.");
+        ulong length = ReadVarLength();
         if (length == 0) return [];
         
         int[] array = new int[length];
-        for (int i = 0; i < length; i++)
+        for (uint i = 0; i < length; i++)
         {
             array[i] = ReadInt();
         }
@@ -110,12 +135,11 @@ public ref struct PacketReader(ReadOnlySpan<byte> data)
     
     public T[] ReadStructArray<T>() where T : struct, ISerializableData
     {
-        int length = ReadFixedLength();
-        if (length < 0) throw new InvalidOperationException("Invalid array length.");
+        ulong length = ReadVarLength();
         if (length == 0) return [];
         
         var array = new T[length];
-        for (int i = 0; i < length; i++)
+        for (uint i = 0; i < length; i++)
         {
             array[i] = ReadStruct<T>();
         }
@@ -124,12 +148,11 @@ public ref struct PacketReader(ReadOnlySpan<byte> data)
 
     public List<T> ReadStructList<T>() where T : struct, ISerializableData
     {
-        int length = ReadFixedLength();
-        if (length < 0) throw new InvalidOperationException("Invalid array length.");
+        ulong length = ReadVarLength();
         if (length == 0) return [];
         
         var array = new List<T>();
-        for (int i = 0; i < length; i++)
+        for (uint i = 0; i < length; i++)
         {
             array.Add(ReadStruct<T>());
         }
@@ -146,16 +169,16 @@ public ref struct PacketReader(ReadOnlySpan<byte> data)
 	
 	public string ReadString()
 	{
-		int length = ReadFixedLength();
+		ulong length = ReadVarLength();
 		if (length <= 0) return string.Empty;
 		
-		if (Position + length > _data.Length)
+		if ((uint)Position + length > (ulong)_data.Length)
 		{
 			throw new InvalidOperationException("Not enough data to read the string.");
 		}
         
-		string result = Encoding.UTF8.GetString(_data.Slice(Position, length));
-		Position += length;
+		string result = Encoding.UTF8.GetString(_data.Slice(Position, (int)length));
+		Position += (int)length;
 		return result;
 	}
 	

@@ -80,7 +80,7 @@ public class PacketWriter : IDisposable, IAsyncDisposable
     
     public void WriteArray<T>(T[] array) where T : struct, ISerializableData
     {
-        WriteFixedLength(array.Length);
+	    WriteVarLength((ulong)array.Length);
         foreach (T item in array)
         {
             Write(item);
@@ -89,7 +89,7 @@ public class PacketWriter : IDisposable, IAsyncDisposable
 
     public void WriteArray(int[] array)
     {
-        WriteFixedLength(array.Length);
+	    WriteVarLength((ulong)array.Length);
         foreach (int item in array)
         {
             Write(item);
@@ -99,7 +99,7 @@ public class PacketWriter : IDisposable, IAsyncDisposable
     public void WriteArray<T>(ICollection<T> array) 
         where T : struct, ISerializableData
     {
-        WriteFixedLength(array.Count);
+	    WriteVarLength((ulong)array.Count);
         foreach (T item in array)
         {
             Write(item);
@@ -111,16 +111,26 @@ public class PacketWriter : IDisposable, IAsyncDisposable
         Write(value);
     }
 
+    public void WriteVarLength(ulong value)
+    {
+		while (value >= 0x80)
+		{
+			Write((byte)(value | 0x80));
+			value >>= 7;
+		}
+		Write((byte)value);
+    }
+
 	public void WriteString(string value)
 	{
 		Span<byte> bytes = System.Text.Encoding.UTF8.GetBytes(value);
-		WriteFixedLength(bytes.Length);
+		WriteVarLength((ulong)bytes.Length);
 		_stream.Write(bytes);
 	}
 	
 	public void WriteBytesWithFixedLength(byte[] payload)
 	{
-        WriteFixedLength(payload.Length);
+		WriteVarLength((ulong)payload.Length);
 		_stream.Write(payload);
 	}
 	
